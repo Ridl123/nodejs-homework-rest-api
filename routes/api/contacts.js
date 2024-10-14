@@ -1,94 +1,78 @@
 const express = require("express");
 const router = express.Router();
-const Joi = require("joi");
-const contactsOperations = require("../../models/contacts");
+const Contact = require("../../models/contacts");
 
-// Joi validation schema for contact
-const contactSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string().required(),
-});
-
-// Joi validation schema for update (all fields optional)
-const updateSchema = Joi.object({
-  name: Joi.string(),
-  email: Joi.string().email(),
-  phone: Joi.string(),
-}).or("name", "email", "phone"); // Ensure at least one field is present
-
-// @ GET /api/contacts
-router.get("/", async (req, res, next) => {
+// GET all contacts
+router.get("/", async (req, res) => {
   try {
-    const contacts = await contactsOperations.listContacts();
-    res.status(200).json(contacts);
+    const contacts = await Contact.find({});
+    return res.status(200).json(contacts);
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
-// @ GET /api/contacts/:contactId
-router.get("/:contactId", async (req, res, next) => {
+// GET contact by ID
+router.get("/:contactId", async (req, res) => {
+  const { contactId } = req.params;
   try {
-    const { contactId } = req.params;
-    const contact = await contactsOperations.getContactById(contactId);
+    const contact = await Contact.findById(contactId);
     if (!contact) {
       return res.status(404).json({ message: "Not found" });
     }
-    res.status(200).json(contact);
+    return res.status(200).json(contact);
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: error.message });
   }
+  return;
 });
 
-// @ POST /api/contacts
-router.post("/", async (req, res, next) => {
+// POST new contact
+router.post("/", async (req, res) => {
+  const { name, email, phone, favorite } = req.body;
   try {
-    const { error } = contactSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        message: `missing required ${error.details[0].path[0]} field`,
-      });
-    }
-    const newContact = await contactsOperations.addContact(req.body);
+    const newContact = await Contact.create({ name, email, phone, favorite });
     res.status(201).json(newContact);
   } catch (error) {
-    next(error);
+    res.status(400).json({ message: error.message });
   }
 });
 
-// @ DELETE /api/contacts/:contactId
-router.delete("/:contactId", async (req, res, next) => {
+// DELETE contact by ID
+router.delete("/:contactId", async (req, res) => {
+  const { contactId } = req.params;
   try {
-    const { contactId } = req.params;
-    const result = await contactsOperations.removeContact(contactId);
-    if (!result) {
+    const deletedContact = await Contact.findByIdAndDelete(contactId);
+    if (!deletedContact) {
       return res.status(404).json({ message: "Not found" });
     }
-    res.status(200).json({ message: "contact deleted" });
+    res.status(200).json({ message: "Contact deleted" });
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
-// @ PUT /api/contacts/:contactId
-router.put("/:contactId", async (req, res, next) => {
+// PATCH update contact favorite status
+router.patch("/:contactId/favorite", async (req, res) => {
+  const { contactId } = req.params;
+  const { favorite } = req.body;
+
+  if (favorite === undefined) {
+    return res.status(400).json({ message: "missing field favorite" });
+  }
+
   try {
-    const { contactId } = req.params;
-    const { error } = updateSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: "missing fields" });
-    }
-    const updatedContact = await contactsOperations.updateContact(
+    const updatedContact = await Contact.findByIdAndUpdate(
       contactId,
-      req.body
+      { favorite },
+      { new: true }
     );
     if (!updatedContact) {
       return res.status(404).json({ message: "Not found" });
     }
-    res.status(200).json(updatedContact);
+    return res.status(200).json(updatedContact);
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
