@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
 mongoose.set("debug", true);
 const app = require("./app"); // presupunem că 'app' este aplicația Express definită în alt fișier
+import dotenv from "dotenv";
+dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
 const connectDB = async () => {
   try {
-    // await mongoose.connect("mongodb://localhost:27017/contactsDB");
     await mongoose.connect(
       "mongodb+srv://Admin:Adminforhomework@cluster0.onxr6.mongodb.net/"
     );
