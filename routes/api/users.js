@@ -12,7 +12,15 @@ import fs from "fs/promises"; // Pentru a manipula fișierele
 import path from "path";
 
 const router = express.Router();
+const {
+  register,
+  verifyEmail,
+  resendVerificationEmail,
+} = require("../controllers/userController");
 
+router.post("/register", register);
+router.get("/verify/:verificationToken", verifyEmail);
+router.post("/verify", resendVerificationEmail);
 // Configurare Multer pentru a salva fișiere temporar în folderul tmp
 const tmpDir = path.join(process.cwd(), "tmp");
 const avatarsDir = path.join(process.cwd(), "public", "avatars");
@@ -146,4 +154,4 @@ router.get("/logout", auth, async (req, res, next) => {
   }
 });
 
-export default router;
+module.exports = router;
